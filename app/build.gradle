@@ -1,13 +1,21 @@
-apply plugin
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
-plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-}
+apply plugin: 'kotlin-kapt'
+
+//plugins {
+//    id 'com.android.application'
+//    id 'org.jetbrains.kotlin.android'
+//}
 
 android {
     namespace 'com.example.mastodonclient'
     compileSdk 33
+
+    dataBinding {
+        enabled true
+    }
 
     defaultConfig {
         applicationId "com.example.mastodonclient"
@@ -58,6 +66,7 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.3' //バージョンは適宜最新にしてください
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
