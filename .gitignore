@@ -1,0 +1,36 @@
+#default
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+
+# Android Studio
+.idea
+.gradle
+local.properties
+*.iml
+
+# Build output
+build
+app/build
+app/release
+
+# User-specific
+*.swp
+*.swo
+*.swn
+*.class
+*.bak
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
