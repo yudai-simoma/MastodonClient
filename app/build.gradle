@@ -1,4 +1,4 @@
-apply plugin: 'kotlin-kapt'
+apply plugin
 
 plugins {
     id 'com.android.application'
@@ -8,10 +8,6 @@ plugins {
 android {
     namespace 'com.example.mastodonclient'
     compileSdk 33
-
-    dateBinding {
-        enabled true
-    }
 
     defaultConfig {
         applicationId "com.example.mastodonclient"
