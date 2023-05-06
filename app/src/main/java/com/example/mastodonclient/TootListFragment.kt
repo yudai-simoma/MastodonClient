@@ -5,6 +5,7 @@ import android.view.View
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.example.mastodonclient.databinding.FragmentTootListBinding
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.atomic.AtomicBoolean
 //本にはないが、SSL認証が切れているため無効にする設定に使用
 import okhttp3.OkHttpClient
 import java.security.cert.X509Certificate
@@ -69,6 +71,33 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
     private lateinit var adapter: TootListAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
+    //読み込み中の状態を保持するメンバ変数
+    private var isLoading = AtomicBoolean()
+    //次の読み込みが必要か・必要でないかを保持するメンバ変数
+    private var hasNext = AtomicBoolean().apply { set(true) }
+
+    //RecyclerViewのスクロールイベントを受け取るリスナー
+    private val loadNextScrollListener = object : RecyclerView.OnScrollListener() {
+
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            super.onScrolled(recyclerView, dx, dy)
+
+            //すでに読み込み処理が実行されているか、次の読み込みの必要がなければ処理を抜ける
+            if (isLoading.get() || !hasNext.get()) {
+                return
+            }
+
+            //1番下の要素が見えていれば、追加で読み込みを実行
+            val visibleItemCount = recyclerView.childCount
+            val totalItemCount = layoutManager.itemCount
+            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+            if ((totalItemCount - visibleItemCount) <= firstVisibleItemPosition) {
+                loadNext()
+            }
+        }
+    }
+
     //読み込み済みのTodoのリストをクラスのメンバ変数で保持する
     private val tootList = ArrayList<Toot>()
 
@@ -91,21 +120,36 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         bindingData.recyclerView.also {
             it.layoutManager = layoutManager
             it.adapter = adapter
+            //RecyclerViewにリスナーを設定
+            it.addOnScrollListener(loadNextScrollListener)
         }
 
-        coroutineScope.launch {
-            val tootListResponse = api.fetchPublicTimeline(onlyMedia = true)
-            //APIから取得したTootのリストをメンバ変数のリストに追加して表示内容を再読み込み
-            //sensitiveがtrueでないTootだけをフィルターで制御
-            tootList.addAll(tootListResponse.filter { !it.sensitive })
-            reloadTootList()
-        }
+        loadNext()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
 
         binding?.unbind()
+    }
+
+    private fun loadNext() {
+        coroutineScope.launch {
+            //状態を読み込み中の状態に設定
+            isLoading.set(true)
+
+            val tootListResponse = api.fetchPublicTimeline(
+                maxId = tootList.lastOrNull()?.id,
+                onlyMedia = true
+            )
+            tootList.addAll(tootListResponse.filter { !it.sensitive })
+            reloadTootList()
+
+            //読み込み中の状態を解除
+            isLoading.set(false)
+            //サーバーから取得したTodoリストに要素が空で無ければ次の読み込みが必要
+            hasNext.set(tootListResponse.isNotEmpty())
+        }
     }
 
     private suspend fun reloadTootList() = withContext(Dispatchers.Main) {

@@ -9,6 +9,8 @@ interface MastodonApi {
     @GET("api/v1/timelines/public")
     //suspendキーワードをつかて中断関数として定義
     suspend fun fetchPublicTimeline(
+        //クエリmax_idとして送るパラメーターを定義。デフォルト値はnull
+        @Query("max_id") maxId: String? = null,
         //クエリonly_mediaとして送るパラメータを定義。デフォルト値はfalse
         @Query("only_media") onlyMedia: Boolean = false
     ): List<Toot>   //Tootオブジェクトを直接取得
