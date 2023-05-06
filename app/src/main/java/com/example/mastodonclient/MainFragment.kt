@@ -29,6 +29,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         private const val API_BASE_URL = "https://androidbook2020.keiji.io"
     }
 
+    //Moshi.BuilderでMoshiのインスタンスを生成
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
@@ -57,6 +58,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         retrofit = Retrofit.Builder()
             .baseUrl(API_BASE_URL)
             .client(okHttpClient) // ここでSSL認証無効の設定を適用
+            //Moshiを使ってJSONをパースするようにRetrofitに登録（追加）
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
         api = retrofit.create(MastodonApi::class.java)
@@ -93,6 +95,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         binding?.unbind()
     }
 
+    /*
+     * Tootオブジェクトのリストについて各要素のdisplayNameをボタンに表示
+     */
     private suspend fun showTootList(
         tootList: List<Toot>
     ) = withContext(Dispatchers.Main) {
