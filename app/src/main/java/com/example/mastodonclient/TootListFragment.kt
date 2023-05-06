@@ -1,15 +1,16 @@
 package com.example.mastodonclient
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.example.mastodonclient.databinding.FragmentTootListBinding
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,8 +66,6 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
             .build()
         api = retrofit.create(MastodonApi::class.java)
     }
-
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private lateinit var adapter: TootListAdapter
     private lateinit var layoutManager: LinearLayoutManager
@@ -149,23 +148,33 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
     }
 
     private fun loadNext() {
-        coroutineScope.launch {
+        //コルーチンをlifecycleScopeで実行
+        lifecycleScope.launch {
             //状態を読み込み中の状態に設定
             isLoading.set(true)
             showProgress()
 
-            val tootListResponse = api.fetchPublicTimeline(
-                maxId = tootList.lastOrNull()?.id,
-                onlyMedia = true
-            )
+            //ネットワーク接続処理はI/O用のスレッドを指定
+            val tootListResponse = withContext(Dispatchers.IO) {
+                api.fetchPublicTimeline(
+                    maxId = tootList.lastOrNull()?.id,
+                    onlyMedia = true
+                )
+            }
+            Log.d(TAG, "fetchPublicTimeline")
+
             tootList.addAll(tootListResponse.filter { !it.sensitive })
+            Log.d(TAG, "addAll")
+
             reloadTootList()
+            Log.d(TAG, "reloadTootList")
 
             //サーバーから取得したTodoリストに要素が空で無ければ次の読み込みが必要
             hasNext.set(tootListResponse.isNotEmpty())
             //読み込み中の状態を解除
             isLoading.set(false)
             dismissProgress()
+            Log.d(TAG, "dismissProgress")
         }
     }
 
