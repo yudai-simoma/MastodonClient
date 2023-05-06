@@ -2,6 +2,7 @@ package com.example.mastodonclient
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import com.example.mastodonclient.MainFragment
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
