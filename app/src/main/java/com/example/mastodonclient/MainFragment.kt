@@ -4,9 +4,19 @@ import android.os.Bundle
 import android.view.View
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.example.mastodonclient.databinding.FragmentMainBinding
 import android.util.Log
 import retrofit2.Retrofit
+//本にはないが、SSL認証が切れているため無効にする設定に使用
+import okhttp3.OkHttpClient
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 
@@ -14,14 +24,36 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         //ログ出力用のタグ
         private val TAG = MainFragment::class.java.simpleName
         //アクセスするMastodonインスタンスのURL
-        private const val API_BASE_URL = "https://androidbook2020.com"
+        private const val API_BASE_URL = "https://androidbook2020.keiji.io"
     }
 
-    //RetrofitでAPIにアクセスする準備。アクセス先のURLとAPIの定義を指定して初期化する
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(API_BASE_URL)
-        .build()
-    private val api = retrofit.create(MastodonApi::class.java)
+    // SSL 証明書を検証しない OkHttpClient の設定
+    private val retrofit: Retrofit
+    private val api: MastodonApi
+
+    init {
+        // SSL 証明書を検証しない OkHttpClient の設定
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+        })
+
+        val sslContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+
+        val okHttpClient = OkHttpClient.Builder()
+            .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier { _, _ -> true }
+            .build()
+
+        //RetrofitでAPIにアクセスする準備。アクセス先のURLとAPIの定義を指定して初期化する
+        retrofit = Retrofit.Builder()
+            .baseUrl(API_BASE_URL)
+            .client(okHttpClient) // ここでSSL認証無効の設定を適用
+            .build()
+        api = retrofit.create(MastodonApi::class.java)
+    }
 
     private var binding: FragmentMainBinding? = null
 
@@ -31,11 +63,17 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         binding = DataBindingUtil.bind(view)
         binding?.button?.setOnClickListener {
             binding?.button?.text = "clicked"
-            //公開タイムラインAPIにアクセスして、サーバから応答を文字列で取得
-            val response = api.fetchPublicTimeline()
-                .execute().body()?.string()
-            //取得した結果をログに出力
-            Log.d(TAG, response!!)
+            //IO用のスレッドで非同期処理を実行
+            CoroutineScope(Dispatchers.IO).launch {
+                //公開タイムラインAPIにアクセスして、サーバから応答を文字列で取得
+                val response = api.fetchPublicTimeline().string()
+                //取得した結果をログに出力
+                Log.d(TAG, response)
+                //メインスレッドで実行
+                withContext(Dispatchers.Main) {
+                    binding?.button?.text = response
+                }
+            }
         }
     }
 
