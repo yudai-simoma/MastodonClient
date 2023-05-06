@@ -123,6 +123,11 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
             //RecyclerViewにリスナーを設定
             it.addOnScrollListener(loadNextScrollListener)
         }
+        //Pull-to-Refresh操作時のイベントリスナーを設定
+        bindingData.swipeRefreshLayout.setOnRefreshListener {
+            tootList.clear()
+            loadNext()
+        }
 
         loadNext()
     }
@@ -133,10 +138,21 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         binding?.unbind()
     }
 
+    //読み込み中表示のONを設定するメソッド。メインスレッド(Dispatchers)で実行する
+    private suspend fun showProgress() = withContext(Dispatchers.Main) {
+        binding?.swipeRefreshLayout?.isRefreshing = true
+    }
+
+    //読み込み中表示のOFFを設定するメソッド。メインスレッド(Dispatchers)で実行する
+    private suspend fun dismissProgress() = withContext(Dispatchers.Main) {
+        binding?.swipeRefreshLayout?.isRefreshing = false
+    }
+
     private fun loadNext() {
         coroutineScope.launch {
             //状態を読み込み中の状態に設定
             isLoading.set(true)
+            showProgress()
 
             val tootListResponse = api.fetchPublicTimeline(
                 maxId = tootList.lastOrNull()?.id,
@@ -145,10 +161,11 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
             tootList.addAll(tootListResponse.filter { !it.sensitive })
             reloadTootList()
 
-            //読み込み中の状態を解除
-            isLoading.set(false)
             //サーバーから取得したTodoリストに要素が空で無ければ次の読み込みが必要
             hasNext.set(tootListResponse.isNotEmpty())
+            //読み込み中の状態を解除
+            isLoading.set(false)
+            dismissProgress()
         }
     }
 
