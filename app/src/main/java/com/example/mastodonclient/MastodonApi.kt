@@ -8,5 +8,5 @@ interface MastodonApi {
     @GET("api/v1/timelines/public")
     //suspendキーワードをつかて中断関数として定義
     suspend fun fetchPublicTimeline(
-    ): ResponseBody
+    ): List<Toot>   //Tootオブジェクトを直接取得
 }
