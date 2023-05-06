@@ -94,10 +94,10 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         }
 
         coroutineScope.launch {
-            val tootListResponse = api.fetchPublicTimeline()
-            //APIから取得したTootのリストをメンバ変数のリストに追加して表示内容を
-            //再読み込み
-            tootList.addAll(tootListResponse)
+            val tootListResponse = api.fetchPublicTimeline(onlyMedia = true)
+            //APIから取得したTootのリストをメンバ変数のリストに追加して表示内容を再読み込み
+            //sensitiveがtrueでないTootだけをフィルターで制御
+            tootList.addAll(tootListResponse.filter { !it.sensitive })
             reloadTootList()
         }
     }
