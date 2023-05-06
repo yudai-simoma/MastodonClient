@@ -44,8 +44,7 @@ class TootListAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         //Tootオブジェクトの内容をDataBindingに表示する
         fun bind(toot: Toot) {
-            binding.userName.text = toot.account.username
-            binding.content.text = toot.content
+            binding.toot = toot
         }
     }
 }
