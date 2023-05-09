@@ -5,16 +5,12 @@ import android.util.Log
 import android.view.View
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.example.mastodonclient.databinding.FragmentTootListBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicBoolean
 
 class TootListFragment : Fragment(R.layout.fragment_toot_list) {
 
@@ -26,16 +22,17 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
 
     private var binding: FragmentTootListBinding? = null
 
-    // SSL 証明書を検証しない OkHttpClient の設定
-    private val tootRepository = TootRepository(API_BASE_URL)
-
     private lateinit var adapter: TootListAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
-    //値の変更が可能(Mutable)なLiveDataを宣言
-    private val isLoading = MutableLiveData<Boolean>()
-    //次の読み込みが必要か・必要でないかを保持するメンバ変数
-    private var hasNext = AtomicBoolean().apply { set(true) }
+    //viewModelを生成
+    private val viewModel: TootListViewModel by viewModels {
+        TootListViewModelFactory(
+            API_BASE_URL,
+            lifecycleScope,
+            requireContext()
+        )
+    }
 
     //RecyclerViewのスクロールイベントを受け取るリスナー
     private val loadNextScrollListener = object : RecyclerView.OnScrollListener() {
@@ -44,8 +41,8 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
             super.onScrolled(recyclerView, dx, dy)
 
             //?: (エルビス演算子)でnullの場合は処理を終了(LiveDataの値はnullの可能性有)
-            val isLoadingSnapshot = isLoading.value ?: return
-            if (isLoadingSnapshot || !hasNext.get()) {
+            val isLoadingSnapshot = viewModel.isLoading.value ?: return
+            if (isLoadingSnapshot || !viewModel.hasNext) {
                 return
             }
 
@@ -55,20 +52,17 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
             val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
             if ((totalItemCount - visibleItemCount) <= firstVisibleItemPosition) {
-                loadNext()
+                viewModel.loadNext()
             }
         }
     }
-
-    //値の変更が可能なLiveDataを宣言
-    private val tootList = MutableLiveData<ArrayList<Toot>>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         //LiveDataに値がない時は、空のリストをインスタンス化してLiveDataに設定
-        val tootListSnapshot = tootList.value ?: ArrayList<Toot>().also {
-            tootList.value = it
+        val tootListSnapshot = viewModel.tootList.value ?: ArrayList<Toot>().also {
+            viewModel.tootList.value = it
         }
 
         //TootListAdapterをインスタンス化する。コンストラクタにtootListを与える
@@ -92,51 +86,24 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         }
         //Pull-to-Refresh操作時のイベントリスナーを設定
         bindingData.swipeRefreshLayout.setOnRefreshListener {
-            tootListSnapshot.clear()
-            loadNext()
+            viewModel.clear()
+            viewModel.loadNext()
         }
 
         //LiveDataの値を監視する、変更はObserverで受け取る
-        isLoading.observe(viewLifecycleOwner, Observer {
+        viewModel.isLoading.observe(viewLifecycleOwner, Observer {
             binding?.swipeRefreshLayout?.isRefreshing = it
         })
-        tootList.observe(viewLifecycleOwner, Observer {
+        viewModel.tootList.observe(viewLifecycleOwner, Observer {
             adapter.notifyDataSetChanged()
         })
 
-        loadNext()
+        viewModel.loadNext()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
 
         binding?.unbind()
-    }
-
-    private fun loadNext() {
-        //コルーチンをlifecycleScopeで実行
-        lifecycleScope.launch {
-            //LiveDataの値を変更する。
-            isLoading.postValue(true)
-
-            val tootListSnapshot = tootList.value ?: return@launch
-
-            //ネットワーク接続処理はI/O用のスレッドを指定
-            val tootListResponse = tootRepository.fetchPublicTimeline(
-                maxId = tootListSnapshot.lastOrNull()?.id,
-                onlyMedia = true
-            )
-            Log.d(TAG, "fetchPublicTimeline")
-
-            tootListSnapshot.addAll(tootListResponse.filter { !it.sensitive })
-            Log.d(TAG, "addAll")
-
-            tootList.postValue(tootListSnapshot)
-
-            //サーバーから取得したTodoリストに要素が空で無ければ次の読み込みが必要
-            hasNext.set(tootListResponse.isNotEmpty())
-            isLoading.postValue(false)
-            Log.d(TAG, "dismissProgress")
-        }
     }
 }
