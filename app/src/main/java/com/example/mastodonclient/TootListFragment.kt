@@ -16,8 +16,6 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
 
     companion object {
         val TAG = TootListFragment::class.java.simpleName
-
-        private const val API_BASE_URL = "https://androidbook2020.keiji.io"
     }
 
     private var binding: FragmentTootListBinding? = null
@@ -28,7 +26,8 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
     //viewModelを生成
     private val viewModel: TootListViewModel by viewModels {
         TootListViewModelFactory(
-            API_BASE_URL,
+            //APIURL
+            BuildConfig.INSTANCE_URL,
             lifecycleScope,
             requireContext()
         )

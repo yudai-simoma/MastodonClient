@@ -34,3 +34,5 @@ app/release
 .DS_Store
 Thumbs.db
 
+# 開発者用アクセストークン情報
+instance.properties

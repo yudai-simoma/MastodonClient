@@ -36,6 +36,25 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+
+        // プロパティファイルinstance.propertiesが無ければ新規作成
+        def instanceProperties = project.rootProject.file('instance.properties')
+        if (!instanceProperties.exists()) {
+            instanceProperties.createNewFile()
+        }
+
+        // プロパテxファイルの読み込み
+        def prop = new Properties()
+        prop.load(project.rootProject.file('instance.properties').newDataInputStream())
+        // 個々のプロパティを読み込む。存在しなければから文字として扱う
+        def INSTANCE_URL = prop.getProperty("instance_url") ?: ""
+        def USERNAME = prop.getProperty("username") ?: ""
+        def ACCESS_TOKEN = prop.getProperty("access_token") ?: ""
+
+        // それぞれの値を、BuildConfigに定数として加える
+        buildConfigField("String", "INSTANCE_URL", "\"${INSTANCE_URL}\"")
+        buildConfigField("String", "USERNAME", "\"${USERNAME}\"")
+        buildConfigField("String", "ACCESS_TOKEN", "\"${ACCESS_TOKEN}\"")
     }
 
     buildTypes {
@@ -54,6 +73,7 @@ android {
     buildFeatures {
         compose true
         dataBinding true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.3.2'
