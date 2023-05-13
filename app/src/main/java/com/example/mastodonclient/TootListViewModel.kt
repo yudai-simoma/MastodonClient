@@ -10,13 +10,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class TootListViewModel(
-    instanceUrl: String,
+    private val instanceUrl: String,
+    private val username: String,
     private val coroutineScope: CoroutineScope,
     application: Application
     //AndroidViewModelを継承、LifecycleObserverを実装
 ) : AndroidViewModel(application), LifecycleObserver {
-    //TootRepositoryをインスタンス化
-    private val tootRepository = TootRepository(instanceUrl)
+
+    private val userCredentialRepository = UserCredentialRepository(
+        application
+    )
+    private lateinit var tootRepository: TootRepository
+
+    private lateinit var userCredential: UserCredential
 
     val isLoading = MutableLiveData<Boolean>()
     var hasNext = true
@@ -26,7 +32,15 @@ class TootListViewModel(
     //onCreateで実行する指定
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
-        loadNext()
+        coroutineScope.launch {
+            //UserCredentialオブジェクトを取得、UserCredentialが存在しなければメソッドを終了する
+            userCredential = userCredentialRepository
+                .find(instanceUrl, username) ?: return@launch
+            //取得したuserCredentialオブジェクトを使ってTootRepositoryをインスタンス化
+            tootRepository = TootRepository(userCredential)
+
+            loadNext()
+        }
     }
 
     fun clear() {
@@ -41,9 +55,9 @@ class TootListViewModel(
             val tootListSnapshot = tootList.value ?: ArrayList()
 
             val maxId = tootListSnapshot.lastOrNull()?.id
-            val tootListResponse = tootRepository.fetchPublicTimeline(
-                maxId = maxId,
-                onlyMedia = true
+            //公開タイムライン取得を、ホームタイムライン取得に変更
+            val tootListResponse = tootRepository.fetchHomeTimeline(
+                maxId = maxId
             )
             tootListSnapshot.addAll(tootListResponse)
             tootList.postValue(tootListSnapshot)

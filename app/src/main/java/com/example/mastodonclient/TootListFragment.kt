@@ -28,6 +28,7 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         TootListViewModelFactory(
             //APIURL
             BuildConfig.INSTANCE_URL,
+            BuildConfig.USERNAME,
             lifecycleScope,
             requireContext()
         )

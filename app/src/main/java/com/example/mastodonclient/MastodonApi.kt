@@ -2,6 +2,7 @@ package com.example.mastodonclient
 
 import okhttp3.ResponseBody
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Query
 
 interface MastodonApi {
@@ -14,4 +15,12 @@ interface MastodonApi {
         //クエリonly_mediaとして送るパラメータを定義。デフォルト値はfalse
         @Query("only_media") onlyMedia: Boolean = false
     ): List<Toot>   //Tootオブジェクトを直接取得
+
+    //HTTPアクセスのAuthorizationヘッダーにアクセストークンを設定
+    @GET("api/v1/timelines/home")
+    suspend fun fetchHomeTimeline(
+        @Header("Authorization") accessToken: String,
+        @Query("max_id") maxId: String? = null,
+        @Query("limit") limit: Int? = null
+    ): List<Toot>
 }

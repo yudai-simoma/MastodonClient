@@ -13,7 +13,7 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 class TootRepository(
-    instanceUrl: String
+    private val userCredential: UserCredential
 ) {
 
     private val moshi = Moshi.Builder()
@@ -39,7 +39,7 @@ class TootRepository(
             .build()
 
         retrofit = Retrofit.Builder()
-            .baseUrl(instanceUrl)
+            .baseUrl(userCredential.instanceUrl)
             .client(okHttpClient) // ここでSSL認証無効の設定を適用
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -57,4 +57,13 @@ class TootRepository(
         )
     }
 
+    suspend fun fetchHomeTimeline(
+        maxId: String?
+    ) = withContext(Dispatchers.IO) {
+        api.fetchHomeTimeline(
+            //Mastodon APIはアクセストークンの前にBearerを付ける規則になっている
+            accessToken = "Bearer ${userCredential.accessToken}",
+            maxId = maxId
+        )
+    }
 }
