@@ -190,4 +190,10 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
         //Activityの起動
         startActivity(intent)
     }
+
+    //コールバックを受け取るdeleteメソッドを実装
+    override fun delete(toot: Toot) {
+        //削除処理を実行
+        viewModel.delete(toot)
+    }
 }

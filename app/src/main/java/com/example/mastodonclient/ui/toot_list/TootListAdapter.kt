@@ -2,6 +2,7 @@ package com.example.mastodonclient.ui.toot_list
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.widget.PopupMenu
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mastodonclient.R
@@ -17,6 +18,7 @@ class TootListAdapter(
 
     interface Callback {
         fun openDetail(toot: Toot)
+        fun delete(toot: Toot)
     }
 
     //リストの要素数を知らせる
@@ -56,6 +58,21 @@ class TootListAdapter(
             //要素をタップしたイベントのリスナーを設定
             binding.root.setOnClickListener {
                 callback?.openDetail(toot)
+            }
+            binding.more.setOnClickListener {
+                //PopupMenuをインスタンス化してメニューリソースlist_item_tootの内容を表示する
+                PopupMenu(itemView.context, it).also { popupMenu ->
+                    popupMenu.menuInflater.inflate(
+                        R.menu.list_item_toot,
+                        popupMenu.menu)
+                    //ドロップダウンメニューから操作を選択したイベントのリスナーを設定
+                    popupMenu.setOnMenuItemClickListener { menuItem ->
+                        when(menuItem.itemId) {
+                            R.id.menu_delete -> callback?.delete(toot)
+                        }
+                        return@setOnMenuItemClickListener true
+                    }
+                }.show()
             }
         }
     }

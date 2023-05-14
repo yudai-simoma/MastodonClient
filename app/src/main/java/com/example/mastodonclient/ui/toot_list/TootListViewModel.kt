@@ -36,7 +36,7 @@ class TootListViewModel(
     val accountInfo = MutableLiveData<Account>()
     var hasNext = true
 
-    val tootList = MutableLiveData<ArrayList<Toot>>()
+    val tootList = MutableLiveData<ArrayList<Toot>?>()
 
     //onCreateで実行する指定
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -97,5 +97,19 @@ class TootListViewModel(
             ?: accountRepository.verifyAccountCredential()
 
         accountInfo.postValue(accountInfoSnapshot)
+    }
+
+    fun delete(toot: Toot) {
+        coroutineScope.launch {
+            //削除を実行
+            tootRepository.delete(toot.id)
+
+            //削除したTootオブジェクトをtootListから取り除いて変更があったことを伝える
+            val tootListSnapshot = tootList.value
+            if (tootListSnapshot != null) {
+                tootListSnapshot.remove(toot)
+                tootList.postValue(tootListSnapshot)
+            }
+        }
     }
 }
