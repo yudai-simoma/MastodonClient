@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 class TootListViewModel(
     private val instanceUrl: String,
     private val username: String,
+    private val timelineType: TimelineType,
     private val coroutineScope: CoroutineScope,
     application: Application
     //AndroidViewModelを継承、LifecycleObserverを実装
@@ -67,10 +68,21 @@ class TootListViewModel(
             val tootListSnapshot = tootList.value ?: ArrayList()
 
             val maxId = tootListSnapshot.lastOrNull()?.id
-            //公開タイムライン取得を、ホームタイムライン取得に変更
-            val tootListResponse = tootRepository.fetchHomeTimeline(
-                maxId = maxId
-            )
+            //タイムラインの種類に応じてRepositoryのメソッドを呼び分ける
+            val tootListResponse = when (timelineType) {
+                TimelineType.PublicTimeline -> {
+                    tootRepository.fetchPublicTimeline(
+                        maxId = maxId,
+                        onlyMedia = true
+                    )
+                }
+                TimelineType.HomeTimeline -> {
+                    tootRepository.fetchHomeTimeline(
+                        maxId = maxId
+                    )
+                }
+            }
+
             tootListSnapshot.addAll(tootListResponse)
             tootList.postValue(tootListSnapshot)
 

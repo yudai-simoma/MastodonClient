@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 class TootListViewModelFactory(
     private val instanceUrl: String,
     private val username: String,
+    private val timelineType: TimelineType,
     private val coroutineScope: CoroutineScope,
     private val context: Context
 ) : ViewModelProvider.NewInstanceFactory() {
@@ -19,6 +20,7 @@ class TootListViewModelFactory(
             return TootListViewModel(
                 instanceUrl,
                 username,
+                timelineType,
                 coroutineScope,
                 context.applicationContext as Application
             ) as T

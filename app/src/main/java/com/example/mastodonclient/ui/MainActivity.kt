@@ -5,6 +5,7 @@ import androidx.databinding.DataBindingUtil
 import android.os.Bundle
 import com.example.mastodonclient.R
 import com.example.mastodonclient.databinding.MainActivityBinding
+import com.example.mastodonclient.ui.toot_list.TimelineType
 import com.example.mastodonclient.ui.toot_list.TootListFragment
 
 class MainActivity : AppCompatActivity() {
@@ -15,8 +16,14 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNavigation.setOnNavigationItemSelectedListener {
             val fragment = when (it.itemId) {
-                R.id.menu_home -> TootListFragment()
-                R.id.menu_public -> TootListFragment()
+                //直接インスタンス化せず、newInstanceにタイムラインの種類を指定
+                R.id.menu_home -> {
+                    TootListFragment.newInstance(TimelineType.HomeTimeline)
+                }
+                R.id.menu_public -> {
+                    TootListFragment.newInstance(TimelineType.PublicTimeline)
+                }
+
                 else -> null
             }
             fragment ?: return@setOnNavigationItemSelectedListener false
@@ -33,7 +40,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            val fragment = TootListFragment()
+            //初期状態で表示するFragmentはホームタイムラインとする
+            val fragment = TootListFragment.newInstance(
+                TimelineType.HomeTimeline
+            )
             supportFragmentManager.beginTransaction()
                 .add(
                     R.id.fragment_container,

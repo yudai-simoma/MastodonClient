@@ -21,6 +21,20 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
         TootListAdapter.Callback {
     companion object {
         val TAG = TootListFragment::class.java.simpleName
+
+        //Bundleオブジェクトに値を出し入れする時に使うキーを定義
+        private const val BUNDLE_KEY_TIMELINE_TYPE_ORDINAL = "timeline_type_ordinal"
+
+        @JvmStatic
+        fun newInstance(timelineType: TimelineType): TootListFragment {
+            val args = Bundle().apply {
+                //列挙型における順序・インデックスをInt型で入れる
+                putInt(BUNDLE_KEY_TIMELINE_TYPE_ORDINAL, timelineType.ordinal)
+            }
+            return TootListFragment().apply {
+                arguments = args
+            }
+        }
     }
 
     private var binding: FragmentTootListBinding? = null
@@ -28,12 +42,30 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
     private lateinit var adapter: TootListAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
+    private var timelineType = TimelineType.PublicTimeline
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        requireArguments().also {
+            //Bundleオブジェクトからタイムラインの種類を列挙型のordinalとして取り出す
+            val typeOrdinal = it.getInt(
+                BUNDLE_KEY_TIMELINE_TYPE_ORDINAL,
+                TimelineType.PublicTimeline.ordinal
+            )
+            //列挙型の値をプロパティに設定
+            timelineType = TimelineType.values()[typeOrdinal]
+        }
+    }
+
+
     //viewModelを生成
     private val viewModel: TootListViewModel by viewModels {
         TootListViewModelFactory(
             //APIURL
             BuildConfig.INSTANCE_URL,
             BuildConfig.USERNAME,
+            timelineType,
             lifecycleScope,
             requireContext()
         )
