@@ -1,4 +1,4 @@
-package com.example.mastodonclient
+package com.example.mastodonclient.ui.toot_list
 
 import android.os.Bundle
 import android.view.View
@@ -10,7 +10,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Observer
+import com.example.mastodonclient.BuildConfig
+import com.example.mastodonclient.R
 import com.example.mastodonclient.databinding.FragmentTootListBinding
+import com.example.mastodonclient.entity.Account
+import com.example.mastodonclient.entity.Toot
+import com.example.mastodonclient.ui.toot_detail.TootDetailFragment
 
 class TootListFragment : Fragment(R.layout.fragment_toot_list),
         TootListAdapter.Callback {

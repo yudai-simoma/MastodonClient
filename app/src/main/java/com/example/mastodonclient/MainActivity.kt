@@ -2,7 +2,7 @@ package com.example.mastodonclient
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.example.mastodonclient.MainFragment
+import com.example.mastodonclient.ui.toot_list.TootListFragment
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

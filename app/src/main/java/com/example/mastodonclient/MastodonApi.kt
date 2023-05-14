@@ -1,6 +1,7 @@
 package com.example.mastodonclient
 
-import okhttp3.ResponseBody
+import com.example.mastodonclient.entity.Account
+import com.example.mastodonclient.entity.Toot
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query

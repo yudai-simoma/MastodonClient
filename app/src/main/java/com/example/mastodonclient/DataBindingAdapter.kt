@@ -5,6 +5,7 @@ import androidx.core.text.HtmlCompat
 import androidx.databinding.BindingAdapter
 import android.widget.ImageView
 import com.bumptech.glide.Glide
+import com.example.mastodonclient.entity.Media
 
 //メソッドをDataBindingからspannedContent属性として利用する
 @BindingAdapter("spannedContent")

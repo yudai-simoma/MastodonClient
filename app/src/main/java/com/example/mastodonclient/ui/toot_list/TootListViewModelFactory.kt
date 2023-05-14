@@ -1,4 +1,4 @@
-package com.example.mastodonclient
+package com.example.mastodonclient.ui.toot_list
 
 import android.app.Application
 import android.content.Context

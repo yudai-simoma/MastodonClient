@@ -11,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.mastodonclient.databinding.FragmentMainBinding
-import android.util.Log
+import com.example.mastodonclient.entity.Toot
 import retrofit2.Retrofit
 //本にはないが、SSL認証が切れているため無効にする設定に使用
 import okhttp3.OkHttpClient
