@@ -12,8 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Observer
 import com.example.mastodonclient.databinding.FragmentTootListBinding
 
-class TootListFragment : Fragment(R.layout.fragment_toot_list) {
-
+class TootListFragment : Fragment(R.layout.fragment_toot_list),
+        TootListAdapter.Callback {
     companion object {
         val TAG = TootListFragment::class.java.simpleName
     }
@@ -66,7 +66,7 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         }
 
         //TootListAdapterをインスタンス化する。コンストラクタにtootListを与える
-        adapter = TootListAdapter(layoutInflater, tootListSnapshot)
+        adapter = TootListAdapter(layoutInflater, tootListSnapshot, this)
         //表示するリストの並べ方（レイアウト方法）を指定する。
         //VERTICALは縦方向に並べる指定
         layoutManager = LinearLayoutManager(
@@ -117,5 +117,16 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list) {
         super.onDestroyView()
 
         binding?.unbind()
+    }
+
+    //要素をタップ時にTootListAdapter内から呼び出される
+    override fun openDetail(toot: Toot) {
+        //TootDetailFragmentのインスタンス生成
+        val fragment = TootDetailFragment.newInstance(toot)
+        //Fragment遷移。FragmentManagerにはparentFragmentManagerを指定
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(TootDetailFragment.TAG)
+            .commit()
     }
 }

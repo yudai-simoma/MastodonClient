@@ -14,6 +14,20 @@ class TootDetailFragment : Fragment(R.layout.fragment_toot_detail) {
 
     companion object {
         val TAG = TootDetailFragment::class.java.simpleName
+
+        //Bundleオブジェクトに値を出し入れするときに使うキーを定義
+        private const val BUNDLE_KEY_TOOT = "bundle_key_toot"
+
+        //companion obfectのメソッド定義
+        @JvmStatic
+        fun newInstance(toot: Toot): TootDetailFragment {
+            val args = Bundle().apply {
+                putParcelable(BUNDLE_KEY_TOOT, toot)
+            }
+            return TootDetailFragment().apply {
+                arguments = args
+            }
+        }
     }
 
     private var toot: Toot? = null
@@ -26,6 +40,14 @@ class TootDetailFragment : Fragment(R.layout.fragment_toot_detail) {
             lifecycleScope,
             requireContext()
         )
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        requireArguments().also {
+            toot = it.getParcelable(BUNDLE_KEY_TOOT)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

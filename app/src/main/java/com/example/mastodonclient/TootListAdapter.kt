@@ -8,9 +8,14 @@ import com.example.mastodonclient.databinding.ListItemTootBinding
 
 class TootListAdapter(
     private val layoutInflater: LayoutInflater,
-    private val tootList: ArrayList<Toot>
+    private val tootList: ArrayList<Toot>,
+    private val callback: Callback?
     //RecyclerView.Adapterを継承する
 ) : RecyclerView.Adapter<TootListAdapter.ViewHolder>() {
+
+    interface Callback {
+        fun openDetail(toot: Toot)
+    }
 
     //リストの要素数を知らせる
     override fun getItemCount() = tootList.size
@@ -27,7 +32,7 @@ class TootListAdapter(
             parent,
             false
         )
-        return ViewHolder(binding)
+        return ViewHolder(binding, callback)
     }
 
     //onCreateViewHolderで生成したViewHolderインスタンスに。リストのposition
@@ -40,11 +45,16 @@ class TootListAdapter(
     }
 
     class ViewHolder(
-        private val binding: ListItemTootBinding
+        private val binding: ListItemTootBinding,
+        private val callback: Callback?
     ) : RecyclerView.ViewHolder(binding.root) {
         //Tootオブジェクトの内容をDataBindingに表示する
         fun bind(toot: Toot) {
             binding.toot = toot
+            //要素をタップしたイベントのリスナーを設定
+            binding.root.setOnClickListener {
+                callback?.openDetail(toot)
+            }
         }
     }
 }
