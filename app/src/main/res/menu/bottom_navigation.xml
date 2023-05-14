@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<item
+    android:id="@+id/menu_home"
+    android:icon="@drawable/baseline_person_black_20"
+    android:title="User" />
+<item
+    android:id="@+id/menu_public"
+    android:icon="@drawable/baseline_public_black_20"
+    android:title="Public" />
+</menu>
