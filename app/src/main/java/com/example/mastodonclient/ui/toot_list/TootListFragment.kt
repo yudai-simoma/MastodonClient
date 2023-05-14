@@ -1,5 +1,7 @@
 package com.example.mastodonclient.ui.toot_list
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +24,9 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
         TootListAdapter.Callback {
     companion object {
         val TAG = TootListFragment::class.java.simpleName
+
+        //TootEditActivityからの結果を識別するためのリクエストコードを定義
+        private const val REQUEST_CODE_TOOT_EDIT = 0x01
 
         //Bundleオブジェクトに値を出し入れする時に使うキーを定義
         private const val BUNDLE_KEY_TIMELINE_TYPE_ORDINAL = "timeline_type_ordinal"
@@ -150,7 +155,7 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
     //Toot投稿画面の呼び出し
     private fun launchTootEditActivity() {
         val intent = TootEditActivity.newIntent(requireContext())
-        startActivity(intent)
+        startActivityForResult(intent, REQUEST_CODE_TOOT_EDIT)
     }
 
     private fun showAccountInfo(accountInfo: Account) {
@@ -158,6 +163,18 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
         if (activity is AppCompatActivity) {
             //ActionBarのサブタイトルにユーザー名を設定
             activity.supportActionBar?.subtitle = accountInfo.username
+        }
+    }
+
+    //startActivityForResultで呼び出したActivityが終了したときに呼ばれる
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CODE_TOOT_EDIT
+            && resultCode == Activity.RESULT_OK) {
+            //読み込み済みのTootを全て消去してから再読み込みする
+            viewModel.clear()
+            viewModel.loadNext()
         }
     }
 

@@ -39,10 +39,23 @@ class TootEditFragment : Fragment(R.layout.fragment_toot_edit) {
         )
     }
 
+    //投稿完了をActivtyに伝えるコールバック
+    interface Callback {
+        fun onPostComplete()
+    }
+
+    //コールバックを保持するプロパティ。nullの場合がある
+    private var callback: Callback? = null
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
 
         setHasOptionsMenu(true)
+
+        //表示したActivityがCallbackを実装しているか検査してコールバックを保持
+        if (context is Callback) {
+            callback = context
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -59,6 +72,8 @@ class TootEditFragment : Fragment(R.layout.fragment_toot_edit) {
         //投稿完了時にtoastを表示
         viewModel.postComplete.observe(viewLifecycleOwner, Observer {
             Toast.makeText(requireContext(), "投稿完了しました", Toast.LENGTH_LONG).show()
+            //コールバックを通じてActivityに投稿完了を伝える
+            callback?.onPostComplete()
         })
         //ツールバーのメニューを初期化するためのメソッド
         viewModel.errorMessage.observe(viewLifecycleOwner, Observer {
