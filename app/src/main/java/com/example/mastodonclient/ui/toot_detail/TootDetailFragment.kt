@@ -9,7 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.mastodonclient.MediaListAdapter
+import com.example.mastodonclient.ui.MediaListAdapter
 import com.example.mastodonclient.R
 import com.example.mastodonclient.databinding.FragmentTootDetailBinding
 import com.example.mastodonclient.entity.Toot
