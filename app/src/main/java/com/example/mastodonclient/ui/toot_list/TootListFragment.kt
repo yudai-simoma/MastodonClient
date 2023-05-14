@@ -16,6 +16,7 @@ import com.example.mastodonclient.databinding.FragmentTootListBinding
 import com.example.mastodonclient.entity.Account
 import com.example.mastodonclient.entity.Toot
 import com.example.mastodonclient.ui.toot_detail.TootDetailActivity
+import com.example.mastodonclient.ui.toot_edit.TootEditActivity
 
 class TootListFragment : Fragment(R.layout.fragment_toot_list),
         TootListAdapter.Callback {
@@ -126,6 +127,10 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
             viewModel.clear()
             viewModel.loadNext()
         }
+        //FABをタップしたイベントのリスナー
+        bindingData.fab.setOnClickListener {
+            launchTootEditActivity()
+        }
 
         //LiveDataの値を監視する、変更はObserverで受け取る
         viewModel.isLoading.observe(viewLifecycleOwner, Observer {
@@ -140,6 +145,12 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
         })
 
         viewLifecycleOwner.lifecycle.addObserver(viewModel)
+    }
+
+    //Toot投稿画面の呼び出し
+    private fun launchTootEditActivity() {
+        val intent = TootEditActivity.newIntent(requireContext())
+        startActivity(intent)
     }
 
     private fun showAccountInfo(accountInfo: Account) {
