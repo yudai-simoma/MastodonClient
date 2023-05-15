@@ -32,6 +32,9 @@ class TootListViewModel(
 
     private lateinit var userCredential: UserCredential
 
+    //認可情報がないことをUIに伝えるLiveData
+    val loginRequired = MutableLiveData<Boolean>()
+
     val isLoading = MutableLiveData<Boolean>()
     val accountInfo = MutableLiveData<Account>()
     var hasNext = true
@@ -42,12 +45,18 @@ class TootListViewModel(
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
         coroutineScope.launch {
-            //UserCredentialオブジェクトを取得、UserCredentialが存在しなければメソッドを終了する
-            userCredential = userCredentialRepository
-                .find(instanceUrl, username) ?: return@launch
-            //取得したuserCredentialオブジェクトを使ってTootRepositoryをインスタンス化
-            tootRepository = TootRepository(userCredential)
-            accountRepository = AccountRepository(userCredential)
+            //認可情報を取得
+            val credential = userCredentialRepository
+                .find(instanceUrl, username)
+            //認可情報が無ければLiveDataを経由してUIに伝えて、処理を抜ける
+            if (credential == null) {
+                loginRequired.postValue(true)
+                return@launch
+            }
+
+            tootRepository = TootRepository(credential)
+            accountRepository = AccountRepository(credential)
+            userCredential = credential
 
             loadNext()
         }

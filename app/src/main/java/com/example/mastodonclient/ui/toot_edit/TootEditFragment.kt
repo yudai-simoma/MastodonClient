@@ -1,6 +1,7 @@
 package com.example.mastodonclient.ui.toot_edit
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
@@ -16,11 +17,14 @@ import com.google.android.material.snackbar.Snackbar
 import com.example.mastodonclient.BuildConfig
 import com.example.mastodonclient.R
 import com.example.mastodonclient.databinding.FragmentTootEditBinding
+import com.example.mastodonclient.ui.login.LoginActivity
 
 class TootEditFragment : Fragment(R.layout.fragment_toot_edit) {
 
     companion object {
         val TAG = TootEditFragment::class.java.simpleName
+
+        private const val REQUEST_CODE_LOGIN = 0x01
 
         //Fragmentのインスタンス生成用メソッド
         fun newInstance(): TootEditFragment {
@@ -69,6 +73,11 @@ class TootEditFragment : Fragment(R.layout.fragment_toot_edit) {
         //DataBindingオブジェクトにviewModelを結びつける
         bindingData.viewModel = viewModel
 
+        viewModel.loginRequired.observe(viewLifecycleOwner, Observer {
+            if (it) {
+                launchLoginActivity()
+            }
+        })
         //投稿完了時にtoastを表示
         viewModel.postComplete.observe(viewLifecycleOwner, Observer {
             Toast.makeText(requireContext(), "投稿完了しました", Toast.LENGTH_LONG).show()
@@ -80,6 +89,11 @@ class TootEditFragment : Fragment(R.layout.fragment_toot_edit) {
             Snackbar.make(view, it, Snackbar.LENGTH_LONG).show()
         })
 
+    }
+
+    private fun launchLoginActivity() {
+        val intent = Intent(requireContext(), LoginActivity::class.java)
+        startActivityForResult(intent, REQUEST_CODE_LOGIN)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
