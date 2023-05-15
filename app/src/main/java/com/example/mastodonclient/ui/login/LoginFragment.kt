@@ -31,6 +31,10 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         )
     }
 
+    //codeを受け取るコールバック関数を宣言
+    private val onObtainCode = fun(code: String) {
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -50,19 +54,35 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             .build()
 
         //WebViewの状態の変化を受け取るためのクラスを設定
-        bindingData.webview.webViewClient = InnerWebViewClient()
+        bindingData.webview.webViewClient = InnerWebViewClient(onObtainCode)
         //JavaScriptを有効化
         bindingData.webview.settings.javaScriptEnabled = true
         //組み立てたURLを読み込む
         bindingData.webview.loadUrl(authUri.toString())
 
-        bindingData.webview.webViewClient = InnerWebViewClient()
+//        bindingData.webview.webViewClient = InnerWebViewClient()
     }
 
-    private class InnerWebViewClient() : WebViewClient() {
+    private class InnerWebViewClient(
+        val onObtainCode: (code: String) -> Unit
+    ) : WebViewClient() {
+        //証明書を無視する関数
         override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
             handler?.proceed() // 証明書エラーを無視して継続する
         }
+        //WebView内でページ遷移(URL変更)イベント
+        override fun onPageFinished(view: WebView?, url: String?) {
+            super.onPageFinished(view, url)
+            view ?: return
+
+            //クエリにcodeが含まれているかチェック。無ければ処理を抜ける
+            val code = Uri.parse(view.url).getQueryParameter("code")
+            code ?: return
+
+            //codeをコールバック関数onObtainCodeの引数として実行
+            onObtainCode(code)
+        }
+
     }
 }
 
