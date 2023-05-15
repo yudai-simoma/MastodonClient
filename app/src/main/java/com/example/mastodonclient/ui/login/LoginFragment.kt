@@ -1,8 +1,11 @@
 package com.example.mastodonclient.ui.login
 
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Bundle
 import android.view.View
+import android.webkit.SslErrorHandler
+import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -52,10 +55,14 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         bindingData.webview.settings.javaScriptEnabled = true
         //組み立てたURLを読み込む
         bindingData.webview.loadUrl(authUri.toString())
+
+        bindingData.webview.webViewClient = InnerWebViewClient()
     }
 
-    private class InnerWebViewClient(
-    ) : WebViewClient() {
+    private class InnerWebViewClient() : WebViewClient() {
+        override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+            handler?.proceed() // 証明書エラーを無視して継続する
+        }
     }
 }
 
