@@ -1,7 +1,9 @@
 package com.example.mastodonclient.ui.login
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.webkit.WebViewClient
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -31,5 +33,29 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         val bindingData: FragmentLoginBinding? = DataBindingUtil.bind(view)
         binding = bindingData ?: return
+
+        //WebViewで読み込むURLを組み立てる
+        val authUri = Uri.parse(BuildConfig.INSTANCE_URL)
+            .buildUpon()
+            .appendPath("oauth")
+            .appendPath("authorize")
+                //識別情報のクライアントキーを設定
+            .appendQueryParameter("client_id", BuildConfig.CLIENT_KEY)
+            .appendQueryParameter("redirect_uri", BuildConfig.CLIENT_REDIRECT_URI)
+            .appendQueryParameter("response_type", "code")
+            .appendQueryParameter("scope", BuildConfig.CLIENT_SCOPES)
+            .build()
+
+        //WebViewの状態の変化を受け取るためのクラスを設定
+        bindingData.webview.webViewClient = InnerWebViewClient()
+        //JavaScriptを有効化
+        bindingData.webview.settings.javaScriptEnabled = true
+        //組み立てたURLを読み込む
+        bindingData.webview.loadUrl(authUri.toString())
+    }
+
+    private class InnerWebViewClient(
+    ) : WebViewClient() {
     }
 }
+
