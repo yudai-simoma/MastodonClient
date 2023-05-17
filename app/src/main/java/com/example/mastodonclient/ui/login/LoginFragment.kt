@@ -33,6 +33,13 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
     //codeを受け取るコールバック関数を宣言
     private val onObtainCode = fun(code: String) {
+        viewModel.requestAccessToken(
+            BuildConfig.CLIENT_KEY,
+            BuildConfig.CLIENT_SECRET,
+            BuildConfig.CLIENT_REDIRECT_URI,
+            BuildConfig.CLIENT_SCOPES,
+            code
+        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -59,8 +66,6 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         bindingData.webview.settings.javaScriptEnabled = true
         //組み立てたURLを読み込む
         bindingData.webview.loadUrl(authUri.toString())
-
-//        bindingData.webview.webViewClient = InnerWebViewClient()
     }
 
     private class InnerWebViewClient(

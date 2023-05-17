@@ -1,6 +1,7 @@
 package com.example.mastodonclient
 
 import com.example.mastodonclient.entity.Account
+import com.example.mastodonclient.entity.ResponseToken
 import com.example.mastodonclient.entity.Toot
 import retrofit2.http.DELETE
 import retrofit2.http.Field
@@ -50,4 +51,19 @@ interface MastodonApi {
         @Header("Authorization") accessToken: String,
         @Path("id") id: String
     )
+
+    //アクセストークンをリクエスト
+    @FormUrlEncoded
+    @POST("oauth/token")
+    suspend fun token(
+        //クライアントキー（ID）
+        @Field("client_id") clientId: String,
+        //クライアントシークレット
+        @Field("client_secret") clientSecret: String,
+        @Field("redirect_uri") redirectUri: String,
+        @Field("scope") scope: String,
+        //取得した認証コード
+        @Field("code") code: String,
+        @Field("grant_type") grantType: String
+    ): ResponseToken
 }
