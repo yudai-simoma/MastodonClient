@@ -1,5 +1,6 @@
 package com.example.mastodonclient.ui.login
 
+import android.content.Context
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Bundle
@@ -10,6 +11,7 @@ import android.webkit.WebViewClient
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.example.mastodonclient.BuildConfig
 import com.example.mastodonclient.R
@@ -31,6 +33,24 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         )
     }
 
+    //認証完了をActiivtyに伝えるコールバック
+    interface Callback {
+        fun onAuthCompleted()
+    }
+
+    //コールバックを保持するプロパティ。nullの場合がある
+    private var callback: Callback? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        //表示したActivityがCallbackを実装しているか検査してコールバックを保持
+        if (context is Callback) {
+            callback = context
+        }
+    }
+
+
     //codeを受け取るコールバック関数を宣言
     private val onObtainCode = fun(code: String) {
         viewModel.requestAccessToken(
@@ -47,6 +67,11 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         val bindingData: FragmentLoginBinding? = DataBindingUtil.bind(view)
         binding = bindingData ?: return
+
+        //アクセストークンが保存されたらActivityにコールバックする
+        viewModel.accessTokenSaved.observe(viewLifecycleOwner, Observer {
+            callback?.onAuthCompleted()
+        })
 
         //WebViewで読み込むURLを組み立てる
         val authUri = Uri.parse(BuildConfig.INSTANCE_URL)

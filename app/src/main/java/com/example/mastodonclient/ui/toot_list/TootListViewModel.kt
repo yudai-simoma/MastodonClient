@@ -44,22 +44,8 @@ class TootListViewModel(
     //onCreateで実行する指定
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
-        coroutineScope.launch {
-            //認可情報を取得
-            val credential = userCredentialRepository
-                .find(instanceUrl, username)
-            //認可情報が無ければLiveDataを経由してUIに伝えて、処理を抜ける
-            if (credential == null) {
-                loginRequired.postValue(true)
-                return@launch
-            }
-
-            tootRepository = TootRepository(credential)
-            accountRepository = AccountRepository(credential)
-            userCredential = credential
-
-            loadNext()
-        }
+        //UserCredentialの取得から読み込みまでをreloadUserCredentia()メソッドにまとめる
+        reloadUserCredential()
     }
 
     fun clear() {
@@ -119,6 +105,26 @@ class TootListViewModel(
                 tootListSnapshot.remove(toot)
                 tootList.postValue(tootListSnapshot)
             }
+        }
+    }
+
+    //UserCredentialの取得と、UserCredentialが存在しない場合の処理
+    fun reloadUserCredential() {
+        coroutineScope.launch {
+            val credential = userCredentialRepository
+                .find(instanceUrl, username)
+            if (credential == null) {
+                loginRequired.postValue(true)
+                return@launch
+            }
+
+            tootRepository = TootRepository(credential)
+            accountRepository = AccountRepository(credential)
+            userCredential = credential
+
+            //読み込み済みのToot一覧を消去して再読み込み
+            clear()
+            loadNext()
         }
     }
 }
