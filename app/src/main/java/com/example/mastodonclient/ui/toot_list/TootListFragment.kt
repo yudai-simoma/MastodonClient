@@ -107,13 +107,8 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //LiveDataに値がない時は、空のリストをインスタンス化してLiveDataに設定
-        val tootListSnapshot = viewModel.tootList.value ?: ArrayList<Toot>().also {
-            viewModel.tootList.value = it
-        }
-
         //TootListAdapterをインスタンス化する。コンストラクタにtootListを与える
-        adapter = TootListAdapter(layoutInflater, tootListSnapshot, this)
+        adapter = TootListAdapter(layoutInflater, lifecycleScope,this)
         //表示するリストの並べ方（レイアウト方法）を指定する。
         //VERTICALは縦方向に並べる指定
         layoutManager = LinearLayoutManager(
@@ -160,7 +155,10 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
             showAccountInfo(it)
         })
         viewModel.tootList.observe(viewLifecycleOwner, Observer {
-            adapter.notifyDataSetChanged()
+            if (it != null) {
+                //添付画像のリストが変更されると、差分計算と更新を実行
+                adapter.tootList = it
+            }
         })
 
         viewLifecycleOwner.lifecycle.addObserver(viewModel)

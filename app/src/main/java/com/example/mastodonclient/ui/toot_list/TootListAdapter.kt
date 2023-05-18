@@ -4,14 +4,19 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.databinding.DataBindingUtil
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mastodonclient.R
 import com.example.mastodonclient.databinding.ListItemTootBinding
 import com.example.mastodonclient.entity.Toot
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TootListAdapter(
     private val layoutInflater: LayoutInflater,
-    private val tootList: ArrayList<Toot>,
+    private val coroutineScope: CoroutineScope,
     private val callback: Callback?
     //RecyclerView.Adapterを継承する
 ) : RecyclerView.Adapter<TootListAdapter.ViewHolder>() {
@@ -20,6 +25,46 @@ class TootListAdapter(
         fun openDetail(toot: Toot)
         fun delete(toot: Toot)
     }
+
+    //2つの差分を判定する条件を定めるクラス
+    private class RecyclerDiffCallback(
+        private val oldList: List<Toot>,
+        private val newList: List<Toot>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize() = oldList.size
+        override fun getNewListSize() = newList.size
+
+        //要素が同じか判定
+        override fun areItemsTheSame(
+            oldItemPosition: Int,
+            newItemPosition: Int
+        ) = oldList[oldItemPosition] == newList[newItemPosition]
+
+        //要素の「内容」が同じか判定
+        override fun areContentsTheSame(
+            oldItemPosition: Int,
+            newItemPosition: Int
+        ) = oldList[oldItemPosition].id == newList[newItemPosition].id
+    }
+
+    var tootList: ArrayList<Toot> = ArrayList()
+        set(value) {
+            coroutineScope.launch(Dispatchers.Main) {
+                //差分計算を非同期で実行
+                val diffResult = withContext(Dispatchers.Default) {
+                    DiffUtil.calculateDiff(
+                        RecyclerDiffCallback(field, value)
+                    )
+                }
+
+                //プロパティに新しいリストを設定
+                field = value
+
+                //差分に基づく更新を実行
+                diffResult.dispatchUpdatesTo(this@TootListAdapter)
+            }
+        }
 
     //リストの要素数を知らせる
     override fun getItemCount() = tootList.size

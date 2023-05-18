@@ -83,8 +83,15 @@ class TootListViewModel(
                         )
                     }
                 }
-                tootListSnapshot.addAll(tootListResponse)
-                tootList.postValue(tootListSnapshot)
+
+                //既存のリストを元に新しいリストのインスタンスを生成
+                val newTootList = ArrayList(tootListSnapshot)
+                    .also {
+                        //取得した要素を新しいリストに追加
+                        it.addAll(tootListResponse)
+                    }
+                //LiveDataに新しいリストを入れて変更を伝える
+                tootList.postValue(newTootList)
                 hasNext = tootListResponse.isNotEmpty()
             } catch (e: HttpException) {
                 when (e.code()) {
@@ -128,12 +135,15 @@ class TootListViewModel(
                 //削除を実行
                 tootRepository.delete(toot.id)
 
-                //削除したTootオブジェクトをtootListから取り除いて変更があったことを伝える
-                val tootListSnapshot = tootList.value
-                if (tootListSnapshot != null) {
-                    tootListSnapshot.remove(toot)
-                    tootList.postValue(tootListSnapshot)
-                }
+                val tootListSnapshot = tootList.value ?: ArrayList()
+                //既存のリストを元に新しいリストのインスタンスを生成
+                val newTootList = ArrayList(tootListSnapshot)
+                    .also {
+                        //削除した要素を新しいリストから取り除く
+                        it.remove(toot)
+                    }
+                //LiveDataに新しいリストを入れて変更を伝える
+                tootList.postValue(newTootList)
             }  catch (e: HttpException) {
                 when (e.code()) {
                     HttpURLConnection.HTTP_FORBIDDEN -> {
