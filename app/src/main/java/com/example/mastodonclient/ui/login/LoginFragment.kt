@@ -1,13 +1,12 @@
 package com.example.mastodonclient.ui.login
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Bundle
 import android.view.View
 import android.webkit.SslErrorHandler
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -21,6 +20,9 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
     companion object {
         val TAG = LoginFragment::class.java.simpleName
+
+        //サーバーに指定するリダイレクトURIの定数。BuildConfig.APPLICATION_IDはアプリケーションIDを表す定数
+        private const val REDIRECT_URI = "auth://${BuildConfig.APPLICATION_ID}"
     }
 
     private var binding: FragmentLoginBinding? = null
@@ -41,6 +43,17 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     //コールバックを保持するプロパティ。nullの場合がある
     private var callback: Callback? = null
 
+    fun requestAccessToken(code: String) {
+        //アクセストークンをリクエスト
+        viewModel.requestAccessToken(
+            BuildConfig.CLIENT_KEY,
+            BuildConfig.CLIENT_SECRET,
+            REDIRECT_URI,
+            BuildConfig.CLIENT_SCOPES,
+            code
+        )
+    }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
 
@@ -48,18 +61,6 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         if (context is Callback) {
             callback = context
         }
-    }
-
-
-    //codeを受け取るコールバック関数を宣言
-    private val onObtainCode = fun(code: String) {
-        viewModel.requestAccessToken(
-            BuildConfig.CLIENT_KEY,
-            BuildConfig.CLIENT_SECRET,
-            BuildConfig.CLIENT_REDIRECT_URI,
-            BuildConfig.CLIENT_SCOPES,
-            code
-        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -78,41 +79,19 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             .buildUpon()
             .appendPath("oauth")
             .appendPath("authorize")
-                //識別情報のクライアントキーを設定
+            //識別情報のクライアントキーを設定
             .appendQueryParameter("client_id", BuildConfig.CLIENT_KEY)
-            .appendQueryParameter("redirect_uri", BuildConfig.CLIENT_REDIRECT_URI)
+            //サーバーに指定するリダイレクトURIを切り替え
+            .appendQueryParameter("redirect_uri", REDIRECT_URI)
             .appendQueryParameter("response_type", "code")
             .appendQueryParameter("scope", BuildConfig.CLIENT_SCOPES)
             .build()
 
-        //WebViewの状態の変化を受け取るためのクラスを設定
-        bindingData.webview.webViewClient = InnerWebViewClient(onObtainCode)
-        //JavaScriptを有効化
-        bindingData.webview.settings.javaScriptEnabled = true
-        //組み立てたURLを読み込む
-        bindingData.webview.loadUrl(authUri.toString())
-    }
-
-    private class InnerWebViewClient(
-        val onObtainCode: (code: String) -> Unit
-    ) : WebViewClient() {
-        //証明書を無視する関数
-        override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-            handler?.proceed() // 証明書エラーを無視して継続する
+        //URI指定（暗黙的インテント）でブラウザを起動
+        val intent = Intent(Intent.ACTION_VIEW, authUri).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
         }
-        //WebView内でページ遷移(URL変更)イベント
-        override fun onPageFinished(view: WebView?, url: String?) {
-            super.onPageFinished(view, url)
-            view ?: return
-
-            //クエリにcodeが含まれているかチェック。無ければ処理を抜ける
-            val code = Uri.parse(view.url).getQueryParameter("code")
-            code ?: return
-
-            //codeをコールバック関数onObtainCodeの引数として実行
-            onObtainCode(code)
-        }
-
+        startActivity(intent)
     }
 }
 
