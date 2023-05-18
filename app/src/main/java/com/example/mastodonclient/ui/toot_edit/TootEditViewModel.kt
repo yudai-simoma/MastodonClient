@@ -7,6 +7,8 @@ import com.example.mastodonclient.repository.TootRepository
 import com.example.mastodonclient.repository.UserCredentialRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.HttpURLConnection
 
 class TootEditViewModel(
     private val instanceUrl: String,
@@ -47,11 +49,22 @@ class TootEditViewModel(
 
             //Tootの投稿を実行
             val tootRepository = TootRepository(credential)
-            tootRepository.postToot(
+            try {
+                tootRepository.postToot(
                 statusSnapshot
-            )
-            //投稿完了をUIに伝える
-            postComplete.postValue(true)
+                )
+                //投稿完了をUIに伝える
+                postComplete.postValue(true)
+              //サーバー側でエラーが発生した場合、RetrofitはHttpExceptionの例外が発生
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    //スコープを超える操作をした場合、サーバーはステータスコード403を返す
+                    HttpURLConnection.HTTP_FORBIDDEN -> {
+                        //エラーメッセージを表示
+                        errorMessage.postValue("必要な権限がありません")
+                    }
+                }
+            }
         }
     }
 }

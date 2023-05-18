@@ -14,6 +14,9 @@ import com.example.mastodonclient.repository.TootRepository
 import com.example.mastodonclient.repository.UserCredentialRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
+import java.net.HttpURLConnection
 
 class TootListViewModel(
     private val instanceUrl: String,
@@ -36,6 +39,7 @@ class TootListViewModel(
     val loginRequired = MutableLiveData<Boolean>()
 
     val isLoading = MutableLiveData<Boolean>()
+    val errorMessage = MutableLiveData<String>()
     val accountInfo = MutableLiveData<Account>()
     var hasNext = true
 
@@ -63,47 +67,83 @@ class TootListViewModel(
             val tootListSnapshot = tootList.value ?: ArrayList()
 
             val maxId = tootListSnapshot.lastOrNull()?.id
-            //タイムラインの種類に応じてRepositoryのメソッドを呼び分ける
-            val tootListResponse = when (timelineType) {
-                TimelineType.PublicTimeline -> {
-                    tootRepository.fetchPublicTimeline(
-                        maxId = maxId,
-                        onlyMedia = true
-                    )
+
+            try {
+                //タイムラインの種類に応じてRepositoryのメソッドを呼び分ける
+                val tootListResponse = when (timelineType) {
+                    TimelineType.PublicTimeline -> {
+                        tootRepository.fetchPublicTimeline(
+                            maxId = maxId,
+                            onlyMedia = true
+                        )
+                    }
+                    TimelineType.HomeTimeline -> {
+                        tootRepository.fetchHomeTimeline(
+                            maxId = maxId
+                        )
+                    }
                 }
-                TimelineType.HomeTimeline -> {
-                    tootRepository.fetchHomeTimeline(
-                        maxId = maxId
-                    )
+                tootListSnapshot.addAll(tootListResponse)
+                tootList.postValue(tootListSnapshot)
+                hasNext = tootListResponse.isNotEmpty()
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    HttpURLConnection.HTTP_FORBIDDEN -> {
+                        errorMessage.postValue("必要な権限がありません")
+                    }
                 }
+            } catch (e: IOException) {
+                errorMessage.postValue(
+                    "サーバーに接続できませんでした。${e.message}"
+                )
+            } finally {
+                isLoading.postValue(false)
             }
-
-            tootListSnapshot.addAll(tootListResponse)
-            tootList.postValue(tootListSnapshot)
-
-            hasNext = tootListResponse.isNotEmpty()
-            isLoading.postValue(false)
         }
     }
 
     private suspend fun updateAccountInfo() {
-        //取得済みのアカウント情報が無ければAPIアクセスを実行
-        val accountInfoSnapshot = accountInfo.value
-            ?: accountRepository.verifyAccountCredential()
+        try {
+            //取得済みのアカウント情報が無ければAPIアクセスを実行
+            val accountInfoSnapshot = accountInfo.value
+                ?: accountRepository.verifyAccountCredential()
 
-        accountInfo.postValue(accountInfoSnapshot)
+            accountInfo.postValue(accountInfoSnapshot)
+        } catch (e: HttpException) {
+            when (e.code()) {
+                HttpURLConnection.HTTP_FORBIDDEN -> {
+                    errorMessage.postValue("必要な権限がありません")
+                }
+            }
+        } catch (e: IOException) {
+            errorMessage.postValue(
+                "サーバーに接続できませんでした。${e.message}"
+            )
+        }
     }
 
     fun delete(toot: Toot) {
         coroutineScope.launch {
-            //削除を実行
-            tootRepository.delete(toot.id)
+            try {
+                //削除を実行
+                tootRepository.delete(toot.id)
 
-            //削除したTootオブジェクトをtootListから取り除いて変更があったことを伝える
-            val tootListSnapshot = tootList.value
-            if (tootListSnapshot != null) {
-                tootListSnapshot.remove(toot)
-                tootList.postValue(tootListSnapshot)
+                //削除したTootオブジェクトをtootListから取り除いて変更があったことを伝える
+                val tootListSnapshot = tootList.value
+                if (tootListSnapshot != null) {
+                    tootListSnapshot.remove(toot)
+                    tootList.postValue(tootListSnapshot)
+                }
+            }  catch (e: HttpException) {
+                when (e.code()) {
+                    HttpURLConnection.HTTP_FORBIDDEN -> {
+                        errorMessage.postValue("必要な権限がありません")
+                    }
+                }
+            } catch (e: IOException) {
+                errorMessage.postValue(
+                    "サーバーに接続できませんでした。${e.message}"
+                )
             }
         }
     }

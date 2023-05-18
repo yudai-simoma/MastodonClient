@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Observer
+import com.google.android.material.snackbar.Snackbar
 import com.example.mastodonclient.BuildConfig
 import com.example.mastodonclient.R
 import com.example.mastodonclient.databinding.FragmentTootListBinding
@@ -150,6 +151,9 @@ class TootListFragment : Fragment(R.layout.fragment_toot_list),
         //LiveDataの値を監視する、変更はObserverで受け取る
         viewModel.isLoading.observe(viewLifecycleOwner, Observer {
             binding?.swipeRefreshLayout?.isRefreshing = it
+        })
+        viewModel.errorMessage.observe(viewLifecycleOwner, Observer {
+            Snackbar.make(bindingData.swipeRefreshLayout, it, Snackbar.LENGTH_LONG).show()
         })
         //ViewModel側の変更を受けてアカウント情報を表示
         viewModel.accountInfo.observe(viewLifecycleOwner, Observer {
