@@ -1,16 +1,21 @@
 package com.example.mastodonclient.repository
 
 import com.example.mastodonclient.MastodonApi
+import com.example.mastodonclient.entity.Media
 import com.example.mastodonclient.entity.Toot
 import com.example.mastodonclient.entity.UserCredential
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.security.cert.X509Certificate
+import java.io.File
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
@@ -71,11 +76,34 @@ class TootRepository(
     }
 
     suspend fun postToot(
-        status: String
+        status: String,
+        //添付するアップロード済みMediaのIDリストを引数に追加。デフォルト値はnull
+        mediaIds: List<String>? = null
     ): Toot = withContext(Dispatchers.IO) {
         return@withContext api.postToot(
             "Bearer ${userCredential.accessToken}",
-            status
+            status,
+            mediaIds
+        )
+    }
+
+    //画像をアップロードする。アップロードしたメディアの情報をMediaオブジェクトで返す
+    suspend fun postMedia(
+        file: File,
+        mediaType: String
+    ): Media = withContext(Dispatchers.IO) {
+
+        //FileオブジェクトからMultipartデータを作成
+        val part = MultipartBody.Part.createFormData(
+            "file",
+            file.name,
+            RequestBody.create(MediaType.parse(mediaType), file)
+        )
+
+        //画像のアップロードを実行
+        return@withContext api.postMedia(
+            "Bearer ${userCredential.accessToken}",
+            part
         )
     }
 

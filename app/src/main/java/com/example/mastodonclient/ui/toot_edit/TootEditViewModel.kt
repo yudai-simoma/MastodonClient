@@ -56,8 +56,16 @@ class TootEditViewModel(
             //Tootの投稿を実行
             val tootRepository = TootRepository(credential)
             try {
+                //添付画像があれば1枚ずつ処理
+                val uploadedMediaIds = mediaAttachments.value?.map {
+                    //添付画像をアップロード
+                    tootRepository.postMedia(it.file, it.mediaType)
+                    //アップロード済みMediaのIDを取り出してリストに変換
+                }?.map { it.id }
+
                 tootRepository.postToot(
-                statusSnapshot
+                    statusSnapshot,
+                    uploadedMediaIds
                 )
                 //投稿完了をUIに伝える
                 postComplete.postValue(true)
@@ -70,7 +78,12 @@ class TootEditViewModel(
                         errorMessage.postValue("必要な権限がありません")
                     }
                 }
+            } catch (e: IOException) {
+                errorMessage.postValue(
+                    "サーバーに接続できませんでした。${e.message}"
+                )
             }
+
         }
     }
 
