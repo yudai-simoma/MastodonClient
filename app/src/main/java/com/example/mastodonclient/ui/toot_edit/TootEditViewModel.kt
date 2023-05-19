@@ -1,14 +1,19 @@
 package com.example.mastodonclient.ui.toot_edit
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import com.example.mastodonclient.entity.LocalMedia
+import com.example.mastodonclient.repository.MediaFileRepository
 import com.example.mastodonclient.repository.TootRepository
 import com.example.mastodonclient.repository.UserCredentialRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.io.IOException
 import java.net.HttpURLConnection
+import javax.xml.transform.OutputKeys.MEDIA_TYPE
 
 class TootEditViewModel(
     private val instanceUrl: String,
@@ -20,6 +25,7 @@ class TootEditViewModel(
     private val userCredentialRepository = UserCredentialRepository(
         application
     )
+    private val mediaFileRepository = MediaFileRepository(application)
 
     //投稿内容のLiveDataを保持
     val status = MutableLiveData<String>()
@@ -66,6 +72,39 @@ class TootEditViewModel(
                 }
             }
         }
+    }
+
+    //添付メディアの更新を伝えるLiveData
+    val mediaAttachments = MutableLiveData<ArrayList<LocalMedia>>()
+
+    //添付メディアを追加する。mediaUriはContentProvider上でのデータを指し示す
+    fun addMedia(mediaUri: Uri) {
+        coroutineScope.launch {
+            try {
+                //mediaUriが指し示す画像をContentProviderから取得してBitmapオブジェクトを取得
+                val bitmap = mediaFileRepository.readBitmap(mediaUri)
+                //Bitmapオブジェクトをアプリのファイル領域に一時ファイルとして保存
+                val tempFile = mediaFileRepository.saveBitmap(bitmap)
+
+                //添付メディアのリストの新しいインスタンスを生成。現在の添付メディアのリストを追加
+                val newMediaAttachments = ArrayList<LocalMedia>()
+                mediaAttachments.value?.also {
+                    newMediaAttachments.addAll(it)
+                }
+                //追加されたメディアを新しいリストに追加
+                newMediaAttachments.add(LocalMedia(tempFile, MEDIA_TYPE))
+                //LiveDataに設定してUIに更新を伝える
+                mediaAttachments.postValue(newMediaAttachments)
+
+            } catch (e: IOException) {
+                //メディアが読み込めなかった場合のエラー処理
+                handleMediaException(mediaUri, e)
+            }
+        }
+    }
+
+    private fun handleMediaException(mediaUri: Uri, e: IOException) {
+        errorMessage.postValue("メディアを読み込めません ${e.message} ${mediaUri}")
     }
 }
 
